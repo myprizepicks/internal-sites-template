@@ -25,7 +25,7 @@
 	},
 	"dependencies": {
 		"fflate": "0.8.2",
-		"hono": "4.11.1"
+		"hono": "^4.13.2"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "0.21.3",
