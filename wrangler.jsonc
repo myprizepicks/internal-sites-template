@@ -29,7 +29,7 @@
 		"DISPATCH_NAMESPACE_NAME": "internal-sites",
 		"SITE_DOMAIN": "myprizepick.com",
 		"DEPLOY_PATH": "/deploy",
-		"ACCOUNT_ID": ""
+		"ACCOUNT_ID": "1e5beca7e344c970703ac1dd57efa462"
 	},
 	"access": {
 		"dev": {
