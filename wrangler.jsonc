@@ -22,7 +22,7 @@
 		{
 			"binding": "DB",
 			"database_name": "internal-sites-platform",
-			"database_id": ""
+			"database_id": "ff43e163-ff67-4f19-b22e-e59e66a987f8"
 		}
 	],
 	"vars": {
@@ -59,7 +59,7 @@
 				"DISPATCH_NAMESPACE_NAME": "internal-sites",
 				"SITE_DOMAIN": "myprizepick.com",
 				"DEPLOY_PATH": "/deploy",
-				"ACCOUNT_ID": ""
+				"ACCOUNT_ID": "1e5beca7e344c970703ac1dd57efa462"
 			}
 		}
 	},
