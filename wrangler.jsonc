@@ -27,7 +27,7 @@
 	],
 	"vars": {
 		"DISPATCH_NAMESPACE_NAME": "internal-sites",
-		"SITE_DOMAIN": "internal-company.com",
+		"SITE_DOMAIN": "myprizepick.com",
 		"DEPLOY_PATH": "/deploy",
 		"ACCOUNT_ID": ""
 	},
@@ -57,7 +57,7 @@
 			],
 			"vars": {
 				"DISPATCH_NAMESPACE_NAME": "internal-sites",
-				"SITE_DOMAIN": "internal-company.com",
+				"SITE_DOMAIN": "myprizepick.com",
 				"DEPLOY_PATH": "/deploy",
 				"ACCOUNT_ID": ""
 			}
