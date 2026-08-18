@@ -382,13 +382,6 @@ app.delete("/api/sites/:slug", async (c) => {
 app.get("*", async (c) => {
 	const slug = slugFromRequest(c.req.raw, c.env);
 
-	const token = c.req.headers.get("cf-access-jwt-assertion");
-
-	// Check if token exists
-	if (!token) {
-		console.log("Missing required CF Access JWT");
-	}
-
 	if (!slug) {
 		return c.redirect(deployPath(c.env));
 	}
