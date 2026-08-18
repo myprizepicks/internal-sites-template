@@ -83,7 +83,7 @@ app.use("*", async (c, next) => {
 	if (url.hostname !== domain && url.hostname.endsWith(`.${domain}`)) {
 		const slug = normalizeSlug(url.hostname.slice(0, -(domain.length + 1)));
 		if (slug) {
-			const identity = await requireAccessIdentity(c.executionCtx);
+			const identity = await requireAccessIdentity(c.executionCtx, c.req.raw);
 			if (identity instanceof Response) return identity;
 
 			return dispatchToSite(c, slug);
@@ -196,11 +196,7 @@ app.get("/admin", async (c) => {
 
 app.use("/api/*", async (c, next) => {
 	if (c.req.method !== "POST" && c.req.method !== "DELETE") {
-		return next();
-	}
-
-	const origin = c.req.header("Origin");
-	if (origin !== undefined && origin !== new URL(c.req.url).origin) {
+		return next();requestew URL(c.req.url).origin) {
 		return c.json(
 			{ error: "Requests from other origins are not allowed" },
 			403,
