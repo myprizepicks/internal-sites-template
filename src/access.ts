@@ -90,7 +90,6 @@ export async function getAccessIdentity(
 export async function requireAccessIdentity(
 	ctx: ExecutionContext, req: Request, env: Env,
 ): Promise<AccessIdentity | Response> {
-	let identity: AccessIdentity = {};
 	console.log("Environment*****************************************************************************", env);
 	console.log("Intercepting request", req);
 	// Get all header keys as an array of strings
@@ -106,6 +105,10 @@ export async function requireAccessIdentity(
 	// Check if token exists
 	if (!token) {
 		console.log("Missing required CF Access JWT");
+		return new Response("Missing required CF Access JWT", {
+			status: 401,
+			headers: { "Content-Type": "text/plain" },
+		});
 	} else {
 		console.log("CF Access JWT found");
 	}
@@ -127,8 +130,17 @@ export async function requireAccessIdentity(
 		// 	email: payload.email || undefined,
 		// 	userId: payload.user_uuid,
 		// };
-		identity.email = payload.email;
-		identity.userId = payload.user_uuid;
+		if (typeof payload.email !== "string") {
+			throw new Error("Token is missing a valid email claim");
+		}
+
+		return {
+			email: payload.email,
+			userId:
+				typeof payload.user_uuid === "string"
+					? payload.user_uuid
+					: undefined,
+		};
 		// return new Response(
 		// 	`Hello ${payload.email || "authenticated user"}!`,
 		// 	{
@@ -161,8 +173,6 @@ export async function requireAccessIdentity(
 	// 		},
 	// 	);
 	// }
-
-	return identity;
 
 	// try {
 	// 	return identity;
