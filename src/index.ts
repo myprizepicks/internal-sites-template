@@ -83,7 +83,7 @@ app.use("*", async (c, next) => {
 	if (url.hostname !== domain && url.hostname.endsWith(`.${domain}`)) {
 		const slug = normalizeSlug(url.hostname.slice(0, -(domain.length + 1)));
 		if (slug) {
-			const identity = await requireAccessIdentity(c.executionCtx, c.req.raw);
+			const identity = await requireAccessIdentity(c.executionCtx, c.req.raw, c.env);
 			if (identity instanceof Response) return identity;
 
 			return dispatchToSite(c, slug);
@@ -103,7 +103,7 @@ app.get("/", (c) => c.redirect(deployPath(c.env)));
 app.get("/deploy", async (c) => {
 	const req = c.req.raw;
 
-	const identity = await requireAccessIdentity(c.executionCtx, req);
+	const identity = await requireAccessIdentity(c.executionCtx, req, c.env);
 	if (identity instanceof Response) return identity;
 
 	return c.html(
@@ -118,7 +118,7 @@ app.get("/deploy", async (c) => {
 
 app.get("/admin", async (c) => {
 	const req = c.req.raw;
-	const identity = await requireAccessIdentity(c.executionCtx, req);
+	const identity = await requireAccessIdentity(c.executionCtx, req, c.env);
 	if (identity instanceof Response) return identity;
 
 	await ensureDb(c.env.DB);
@@ -214,7 +214,7 @@ app.use("/api/*", async (c, next) => {
 
 app.post("/api/sites/deploy", async (c) => {
 	const req = c.req.raw;
-	const identity = await requireAccessIdentity(c.executionCtx, req);
+	const identity = await requireAccessIdentity(c.executionCtx, req, c.env);
 	if (identity instanceof Response) return identity;
 
 	let upload: Awaited<ReturnType<typeof parseStaticSiteUpload>>;
@@ -320,7 +320,7 @@ app.post("/api/sites/deploy", async (c) => {
 
 app.get("/api/sites/:slug", async (c) => {
 	const req = c.req.raw;
-	const identity = await requireAccessIdentity(c.executionCtx, req);
+	const identity = await requireAccessIdentity(c.executionCtx, req, c.env);
 	if (identity instanceof Response) return identity;
 
 	await ensureDb(c.env.DB);
@@ -342,7 +342,7 @@ app.get("/api/sites/:slug", async (c) => {
 
 app.delete("/api/sites/:slug", async (c) => {
 	const req = c.req.raw;
-	const identity = await requireAccessIdentity(c.executionCtx, req);
+	const identity = await requireAccessIdentity(c.executionCtx, req, c.env);
 	if (identity instanceof Response) return identity;
 
 	await ensureDb(c.env.DB);
@@ -389,7 +389,7 @@ app.get("*", async (c) => {
 	const req = c.req.raw;
 
 	// Authenticate site requests before redirects or dispatch namespace access.
-	const identity = await requireAccessIdentity(c.executionCtx, req);
+	const identity = await requireAccessIdentity(c.executionCtx, req, c.env);
 	if (identity instanceof Response) return identity;
 
 	// Redirect /sites/slug to /sites/slug/ in path-based mode
