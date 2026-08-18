@@ -196,7 +196,11 @@ app.get("/admin", async (c) => {
 
 app.use("/api/*", async (c, next) => {
 	if (c.req.method !== "POST" && c.req.method !== "DELETE") {
-		return next();requestew URL(c.req.url).origin) {
+		return next();
+	}
+
+	const origin = c.req.header("Origin");
+	if (origin !== undefined && origin !== new URL(c.req.url).origin) {
 		return c.json(
 			{ error: "Requests from other origins are not allowed" },
 			403,
