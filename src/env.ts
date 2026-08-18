@@ -30,6 +30,12 @@ export interface Env {
 
 	/** Path where the deploy UI is served. Defaults to "/deploy". */
 	DEPLOY_PATH?: string;
+
+	/** Team domain for Cloudflare Access. */
+	TEAM_DOMAIN: string;
+
+	/** Policy audience for Cloudflare Access. */
+	POLICY_AUD: string;
 }
 
 // ── Workers for Platforms types ──────────────────────────────────────────────
