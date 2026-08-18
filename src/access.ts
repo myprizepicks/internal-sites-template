@@ -87,8 +87,24 @@ export async function getAccessIdentity(
  * If ctx.access is undefined, Access is not enabled on this Worker.
  */
 export async function requireAccessIdentity(
-	ctx: ExecutionContext,
+	ctx: ExecutionContext, req: Request,
 ): Promise<AccessIdentity | Response> {
+	// Get all header keys as an array of strings
+	const headerKeys: string[] = []
+	for (const [key] of req.headers) {
+		headerKeys.push(key)
+	}
+
+	console.log("Header keys", headerKeys);
+
+	const token = req.headers.get("cf-access-jwt-assertion");
+
+	// Check if token exists
+	if (!token) {
+		console.log("Missing required CF Access JWT");
+	} else {
+		console.log("CF Access JWT found");
+	}
 	if (!ctx.access) {
 		return new Response(
 			"Setup required: Enable Cloudflare Access\n\n" +
