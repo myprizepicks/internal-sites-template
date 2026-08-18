@@ -90,15 +90,6 @@ export async function getAccessIdentity(
 export async function requireAccessIdentity(
 	ctx: ExecutionContext, req: Request, env: Env,
 ): Promise<AccessIdentity | Response> {
-	console.log("Environment*****************************************************************************", env);
-	console.log("Intercepting request", req);
-	// Get all header keys as an array of strings
-	const headerKeys: string[] = []
-	for (const [key] of req.headers) {
-		headerKeys.push(key)
-	}
-
-	console.log("Header keys", headerKeys);
 
 	const token = req.headers.get("cf-access-jwt-assertion");
 
@@ -126,10 +117,6 @@ export async function requireAccessIdentity(
 		});
 
 		// Token is valid, proceed with your application logic
-		// identity = {
-		// 	email: payload.email || undefined,
-		// 	userId: payload.user_uuid,
-		// };
 		if (typeof payload.email !== "string") {
 			throw new Error("Token is missing a valid email claim");
 		}
@@ -141,12 +128,6 @@ export async function requireAccessIdentity(
 					? payload.user_uuid
 					: undefined,
 		};
-		// return new Response(
-		// 	`Hello ${payload.email || "authenticated user"}!`,
-		// 	{
-		// 		headers: { "Content-Type": "text/plain" },
-		// 	}
-		// );
 	} catch (error) {
 		// Token verification failed
 		const message = error instanceof Error ? error.message : "Unknown error";
@@ -155,38 +136,4 @@ export async function requireAccessIdentity(
 			headers: { "Content-Type": "text/plain" },
 		});
 	}
-
-	// if (!ctx.access) {
-	// 	return new Response(
-	// 		"Setup required: Enable Cloudflare Access\n\n" +
-	// 			"This Worker is not protected by Cloudflare Access.\n\n" +
-	// 			"To enable Access:\n" +
-	// 			"1. Open Workers & Pages: https://dash.cloudflare.com/?to=/:account/workers-and-pages\n" +
-	// 			"2. Select this Worker and open the Access tab.\n" +
-	// 			'3. Select "Protect this Worker behind Access."\n' +
-	// 			'4. Choose "All traffic," add an Allow policy for your company, and select "Apply Access."\n' +
-	// 			"5. Reload this page and sign in.\n\n" +
-	// 			"If Access is already enabled, confirm that it covers this hostname and path.",
-	// 		{
-	// 			status: 401,
-	// 			headers: { "Content-Type": "text/plain; charset=utf-8" },
-	// 		},
-	// 	);
-	// }
-
-	// try {
-	// 	return identity;
-	// 	//return toAccessIdentity(await ctx.access.getIdentity());
-	// } catch (error) {
-	// 	const detail = error instanceof Error ? error.message : "Unknown error";
-	// 	return new Response(
-	// 		"Could not read your Access identity.\n\n" +
-	// 			"Reload this page and sign in again.\n\n" +
-	// 			`Technical details: ${detail}`,
-	// 		{
-	// 			status: 401,
-	// 			headers: { "Content-Type": "text/plain; charset=utf-8" },
-	// 		},
-	// 	);
-	// }
 }

@@ -68,22 +68,14 @@ async function ensureDb(db: D1Database): Promise<void> {
  * /admin, or /api/*.
  */
 app.use("*", async (c, next) => {
-	console.log("Intercepting request", c.req.raw);
-	const token = c.req.raw.headers.get("cf-access-jwt-assertion");
-
-	// Check if token exists
-	if (!token) {
-		console.log("Missing required CF Access JWT");
-	} else {
-		console.log("CF Access JWT found", token);
-	}
+	const req = c.req.raw;
 	const url = new URL(c.req.url);
 	const domain = siteDomain(c.env);
 
 	if (url.hostname !== domain && url.hostname.endsWith(`.${domain}`)) {
 		const slug = normalizeSlug(url.hostname.slice(0, -(domain.length + 1)));
 		if (slug) {
-			const identity = await requireAccessIdentity(c.executionCtx, c.req.raw, c.env);
+			const identity = await requireAccessIdentity(c.executionCtx, req, c.env);
 			if (identity instanceof Response) return identity;
 
 			return dispatchToSite(c, slug);
