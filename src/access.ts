@@ -90,7 +90,10 @@ export async function getAccessIdentity(
 export async function requireAccessIdentity(
 	ctx: ExecutionContext, req: Request, env: Env,
 ): Promise<AccessIdentity | Response> {
-	let identity: AccessIdentity | null = null;
+	let identity: AccessIdentity = {
+		email: undefined,
+		userId: undefined,
+	};
 	console.log("Environment*****************************************************************************", env);
 	console.log("Intercepting request", req);
 	// Get all header keys as an array of strings
@@ -123,10 +126,12 @@ export async function requireAccessIdentity(
 		});
 
 		// Token is valid, proceed with your application logic
-		identity = {
-			email: payload.email || "unknown",
-			userId: payload.user_uuid,
-		};
+		// identity = {
+		// 	email: payload.email || undefined,
+		// 	userId: payload.user_uuid,
+		// };
+		identity.email = payload.email || undefined;
+		identity.userId = payload.user_uuid;
 		// return new Response(
 		// 	`Hello ${payload.email || "authenticated user"}!`,
 		// 	{
@@ -160,19 +165,21 @@ export async function requireAccessIdentity(
 	// 	);
 	// }
 
-	try {
-		return identity;
-		//return toAccessIdentity(await ctx.access.getIdentity());
-	} catch (error) {
-		const detail = error instanceof Error ? error.message : "Unknown error";
-		return new Response(
-			"Could not read your Access identity.\n\n" +
-				"Reload this page and sign in again.\n\n" +
-				`Technical details: ${detail}`,
-			{
-				status: 401,
-				headers: { "Content-Type": "text/plain; charset=utf-8" },
-			},
-		);
-	}
+	return identity;
+
+	// try {
+	// 	return identity;
+	// 	//return toAccessIdentity(await ctx.access.getIdentity());
+	// } catch (error) {
+	// 	const detail = error instanceof Error ? error.message : "Unknown error";
+	// 	return new Response(
+	// 		"Could not read your Access identity.\n\n" +
+	// 			"Reload this page and sign in again.\n\n" +
+	// 			`Technical details: ${detail}`,
+	// 		{
+	// 			status: 401,
+	// 			headers: { "Content-Type": "text/plain; charset=utf-8" },
+	// 		},
+	// 	);
+	// }
 }
