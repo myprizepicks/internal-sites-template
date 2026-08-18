@@ -90,10 +90,7 @@ export async function getAccessIdentity(
 export async function requireAccessIdentity(
 	ctx: ExecutionContext, req: Request, env: Env,
 ): Promise<AccessIdentity | Response> {
-	let identity: AccessIdentity = {
-		email: undefined,
-		userId: undefined,
-	};
+	let identity: AccessIdentity = {};
 	console.log("Environment*****************************************************************************", env);
 	console.log("Intercepting request", req);
 	// Get all header keys as an array of strings
@@ -130,7 +127,7 @@ export async function requireAccessIdentity(
 		// 	email: payload.email || undefined,
 		// 	userId: payload.user_uuid,
 		// };
-		identity.email = payload.email || undefined;
+		identity.email = payload.email;
 		identity.userId = payload.user_uuid;
 		// return new Response(
 		// 	`Hello ${payload.email || "authenticated user"}!`,
