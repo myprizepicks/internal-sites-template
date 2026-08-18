@@ -67,5 +67,11 @@
 			}
 		}
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
+	"routes": [
+		{
+		"pattern": "internal-sites.myprizepick.com",   // your domain or subdomain
+		"custom_domain": true
+		}
+  ]
 }
