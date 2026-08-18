@@ -30,8 +30,9 @@
 		"SITE_DOMAIN": "myprizepick.com",
 		"DEPLOY_PATH": "/deploy",
 		"ACCOUNT_ID": "1e5beca7e344c970703ac1dd57efa462",
-		"POLICY_AUD": "e7d8d6597a8233f838963e6d6e02d81353960c1f49b335e8c6ddb338cd446263"
-	},
+		"POLICY_AUD": "e7d8d6597a8233f838963e6d6e02d81353960c1f49b335e8c6ddb338cd446263",
+		"TEAM_DOMAIN": "https://prizepicks-dev.cloudflareaccess.com"
+		},
 	"access": {
 		"dev": {
 			"aud": "local-dev-aud",
@@ -60,7 +61,9 @@
 				"DISPATCH_NAMESPACE_NAME": "internal-sites",
 				"SITE_DOMAIN": "myprizepick.com",
 				"DEPLOY_PATH": "/deploy",
-				"ACCOUNT_ID": "1e5beca7e344c970703ac1dd57efa462"
+				"ACCOUNT_ID": "1e5beca7e344c970703ac1dd57efa462",
+				"POLICY_AUD": "e7d8d6597a8233f838963e6d6e02d81353960c1f49b335e8c6ddb338cd446263",
+				"TEAM_DOMAIN": "https://prizepicks-dev.cloudflareaccess.com"
 			}
 		}
 	},

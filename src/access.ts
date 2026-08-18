@@ -15,6 +15,7 @@
 
 import type { ExecutionContext } from "hono";
 import type { Env } from "./env";
+import { jwtVerify, createRemoteJWKSet } from "jose";
 
 export interface AccessIdentity {
 	email: string;
@@ -87,8 +88,11 @@ export async function getAccessIdentity(
  * If ctx.access is undefined, Access is not enabled on this Worker.
  */
 export async function requireAccessIdentity(
-	ctx: ExecutionContext, req: Request,
+	ctx: ExecutionContext, req: Request, env: Env,
 ): Promise<AccessIdentity | Response> {
+	let identity: AccessIdentity | null = null;
+	console.log("Environment*****************************************************************************", env);
+	console.log("Intercepting request", req);
 	// Get all header keys as an array of strings
 	const headerKeys: string[] = []
 	for (const [key] of req.headers) {
@@ -105,26 +109,60 @@ export async function requireAccessIdentity(
 	} else {
 		console.log("CF Access JWT found");
 	}
-	if (!ctx.access) {
-		return new Response(
-			"Setup required: Enable Cloudflare Access\n\n" +
-				"This Worker is not protected by Cloudflare Access.\n\n" +
-				"To enable Access:\n" +
-				"1. Open Workers & Pages: https://dash.cloudflare.com/?to=/:account/workers-and-pages\n" +
-				"2. Select this Worker and open the Access tab.\n" +
-				'3. Select "Protect this Worker behind Access."\n' +
-				'4. Choose "All traffic," add an Allow policy for your company, and select "Apply Access."\n' +
-				"5. Reload this page and sign in.\n\n" +
-				"If Access is already enabled, confirm that it covers this hostname and path.",
-			{
-				status: 401,
-				headers: { "Content-Type": "text/plain; charset=utf-8" },
-			},
-		);
-	}
 
 	try {
-		return toAccessIdentity(await ctx.access.getIdentity());
+		// Create JWKS from your team domain
+		const JWKS = createRemoteJWKSet(
+			new URL(`${env.TEAM_DOMAIN}/cdn-cgi/access/certs`)
+		);
+
+		// Verify the JWT
+		const { payload } = await jwtVerify(token, JWKS, {
+			issuer: env.TEAM_DOMAIN,
+			audience: env.POLICY_AUD,
+		});
+
+		// Token is valid, proceed with your application logic
+		identity = {
+			email: payload.email || "unknown",
+			userId: payload.user_uuid,
+		};
+		// return new Response(
+		// 	`Hello ${payload.email || "authenticated user"}!`,
+		// 	{
+		// 		headers: { "Content-Type": "text/plain" },
+		// 	}
+		// );
+	} catch (error) {
+		// Token verification failed
+		const message = error instanceof Error ? error.message : "Unknown error";
+		return new Response(`Invalid token: ${message}`, {
+			status: 403,
+			headers: { "Content-Type": "text/plain" },
+		});
+	}
+
+	// if (!ctx.access) {
+	// 	return new Response(
+	// 		"Setup required: Enable Cloudflare Access\n\n" +
+	// 			"This Worker is not protected by Cloudflare Access.\n\n" +
+	// 			"To enable Access:\n" +
+	// 			"1. Open Workers & Pages: https://dash.cloudflare.com/?to=/:account/workers-and-pages\n" +
+	// 			"2. Select this Worker and open the Access tab.\n" +
+	// 			'3. Select "Protect this Worker behind Access."\n' +
+	// 			'4. Choose "All traffic," add an Allow policy for your company, and select "Apply Access."\n' +
+	// 			"5. Reload this page and sign in.\n\n" +
+	// 			"If Access is already enabled, confirm that it covers this hostname and path.",
+	// 		{
+	// 			status: 401,
+	// 			headers: { "Content-Type": "text/plain; charset=utf-8" },
+	// 		},
+	// 	);
+	// }
+
+	try {
+		return identity;
+		//return toAccessIdentity(await ctx.access.getIdentity());
 	} catch (error) {
 		const detail = error instanceof Error ? error.message : "Unknown error";
 		return new Response(
