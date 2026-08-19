@@ -26,10 +26,12 @@ function assertDispatchToken(env: Env): void {
 	}
 }
 
-const AuthHeaders = (env: Env) => ({
+const AuthHeaders = (env: Env) => {
 	assertDispatchToken(env);
-	Authorization: `Bearer ${env.DISPATCH_NAMESPACE_API_TOKEN}`,
-});
+	return {
+		Authorization: `Bearer ${env.DISPATCH_NAMESPACE_API_TOKEN}`,
+	};
+};
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
