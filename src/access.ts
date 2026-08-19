@@ -93,6 +93,8 @@ export async function requireAccessIdentity(
 	const accessIdentity = await getAccessIdentity(ctx);
 	if (accessIdentity) {
 		return accessIdentity;
+	} else {
+		console.log("Missing Access Identity, falling back to token verification");
 	}
 
 	const token = req.headers.get("cf-access-jwt-assertion");
