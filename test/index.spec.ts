@@ -12,8 +12,15 @@ import {
 	it,
 	vi,
 } from "vitest";
+import {
+	createAccessJwt,
+	mockAccessGetIdentity,
+	mockAccessGetIdentityFailure,
+	mockAccessJwks,
+} from "./access-jwt";
 import { fetchMock } from "./fetch-mock";
 import app, { resetDbInitialized } from "../src/index";
+import { resetAccessAuthCacheForTests } from "../src/access";
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
 
@@ -119,6 +126,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
 	resetDbInitialized();
+	resetAccessAuthCacheForTests();
 });
 
 afterEach(() => {
@@ -227,6 +235,88 @@ describe("Internal Sites Platform", () => {
 		await waitOnExecutionContext(ctx);
 
 		expect(response.status).toBe(401);
+	});
+
+	// ── JWT fallback when ctx.access is unavailable ─────────────────────
+
+	it("serves the deploy page via JWT header and get-identity fallback", async () => {
+		await mockAccessJwks(env.TEAM_DOMAIN);
+		mockAccessGetIdentity(env.TEAM_DOMAIN, {
+			email: "employee@company.com",
+			user_uuid: "7335d417-61da-459d-899c-0a01c76a2f94",
+		});
+		const token = await createAccessJwt(
+			{
+				email: "employee@company.com",
+				sub: "7335d417-61da-459d-899c-0a01c76a2f94",
+			},
+			env,
+		);
+
+		const request = new Request(
+			"https://my-worker.my-account.workers.dev/deploy",
+			{ headers: { "Cf-Access-Jwt-Assertion": token } },
+		);
+		const ctx = createNoAccessContext();
+		const response = await app.fetch(request, env, ctx);
+		await waitOnExecutionContext(ctx);
+
+		expect(response.status).toBe(200);
+		expect(await response.text()).toContain("Upload and deploy");
+	});
+
+	it("serves the deploy page via CF_Authorization cookie fallback", async () => {
+		await mockAccessJwks(env.TEAM_DOMAIN);
+		mockAccessGetIdentity(env.TEAM_DOMAIN, {
+			email: "cookie-user@company.com",
+			user_uuid: "cookie-user-id",
+		});
+		const token = await createAccessJwt(
+			{ email: "cookie-user@company.com", sub: "cookie-user-id" },
+			env,
+		);
+
+		const request = new Request("https://mycompany.com/deploy", {
+			headers: { Cookie: `CF_Authorization=${token}` },
+		});
+		const customEnv = { ...env, SITE_DOMAIN: "mycompany.com" };
+		const ctx = createNoAccessContext();
+		const response = await app.fetch(request, customEnv, ctx);
+		await waitOnExecutionContext(ctx);
+
+		expect(response.status).toBe(200);
+		expect(await response.text()).toContain("Upload and deploy");
+	});
+
+	it("falls back to JWT claims when get-identity fails", async () => {
+		await mockAccessJwks(env.TEAM_DOMAIN);
+		mockAccessGetIdentityFailure(env.TEAM_DOMAIN);
+		const token = await createAccessJwt(
+			{ email: "jwt-only@company.com", sub: "jwt-only-id" },
+			env,
+		);
+
+		const request = new Request("http://localhost/admin", {
+			headers: { "Cf-Access-Jwt-Assertion": token },
+		});
+		const ctx = createNoAccessContext();
+		const response = await app.fetch(request, env, ctx);
+		await waitOnExecutionContext(ctx);
+
+		expect(response.status).toBe(200);
+		expect(await response.text()).toContain("Signed in as jwt-only@company.com");
+	});
+
+	it("returns 403 for an invalid JWT", async () => {
+		const request = new Request("http://localhost/deploy", {
+			headers: { "Cf-Access-Jwt-Assertion": "not-a-valid-jwt" },
+		});
+		const ctx = createNoAccessContext();
+		const response = await app.fetch(request, env, ctx);
+		await waitOnExecutionContext(ctx);
+
+		expect(response.status).toBe(403);
+		expect(await response.text()).toContain("Invalid token:");
 	});
 
 	// ── Authenticated on workers.dev and custom domains ──────────────────
