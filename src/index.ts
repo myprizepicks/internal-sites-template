@@ -87,6 +87,10 @@ app.use("*", async (c, next) => {
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 
+// Serve management UI brand assets through the Worker so subdomain requests
+// still reach the uploaded site dispatcher before static-asset resolution.
+app.get("/brand/*", (c) => c.env.ASSETS.fetch(c.req.raw));
+
 app.get("/favicon.ico", () => new Response(null, { status: 204 }));
 
 app.get("/", (c) => c.redirect(deployPath(c.env)));

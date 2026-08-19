@@ -8,6 +8,12 @@
 	"placement": {
 		"mode": "smart"
 	},
+	"assets": {
+		"directory": "./public",
+		"binding": "ASSETS",
+		"not_found_handling": "none",
+		"run_worker_first": ["/brand/*"]
+	},
 	"observability": {
 		"enabled": true
 	},
@@ -43,6 +49,13 @@
 	},
 	"env": {
 		"local": {
+			"routes": [],
+			"assets": {
+				"directory": "./public",
+				"binding": "ASSETS",
+				"not_found_handling": "none",
+				"run_worker_first": ["/brand/*"]
+			},
 			"dispatch_namespaces": [
 				{
 					"binding": "dispatcher",

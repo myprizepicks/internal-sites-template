@@ -12,6 +12,9 @@ export interface Env {
 	/** D1 database storing site metadata, deployments, and ACLs. */
 	DB: D1Database;
 
+	/** Static PrizePicks brand assets served by the Worker. */
+	ASSETS: Fetcher;
+
 	// ── Secrets ──────────────────────────────────────────────────────────────
 
 	/** API token with Workers Scripts:Edit permission for deploying into the dispatch namespace. */

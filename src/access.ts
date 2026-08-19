@@ -90,6 +90,10 @@ export async function getAccessIdentity(
 export async function requireAccessIdentity(
 	ctx: ExecutionContext, req: Request, env: Env,
 ): Promise<AccessIdentity | Response> {
+	const accessIdentity = await getAccessIdentity(ctx);
+	if (accessIdentity) {
+		return accessIdentity;
+	}
 
 	const token = req.headers.get("cf-access-jwt-assertion");
 
