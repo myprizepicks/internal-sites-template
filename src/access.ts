@@ -2,11 +2,12 @@
  * Cloudflare Access identity helpers and routing mode detection.
  *
  * Auth model:
- *   - ctx.access is populated automatically by the Workers runtime when
- *     Cloudflare Access authenticates a request. No manual JWT verification
- *     or environment secrets are needed.
- *   - In local development, `wrangler dev` simulates ctx.access using the
- *     `access.dev` block in wrangler.jsonc.
+ *   - ctx.access is populated when the Workers runtime receives Access context
+ *     directly (e.g. local dev via access.dev in wrangler.jsonc).
+ *   - Workers with Static Assets run behind an internal router that does not
+ *     pass ctx.access. In production, identity is resolved by verifying the
+ *     Cf-Access-Jwt-Assertion header (or CF_Authorization cookie) and calling
+ *     /cdn-cgi/access/get-identity on the team domain.
  *
  * Routing mode (separate from auth) is auto-detected:
  *   - workers.dev / localhost / placeholder domain → path-based routing (/sites/slug/)
@@ -14,8 +15,9 @@
  */
 
 import type { ExecutionContext } from "hono";
+import type { JWTPayload } from "jose";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { Env } from "./env";
-import { jwtVerify, createRemoteJWKSet } from "jose";
 
 export interface AccessIdentity {
 	email: string;
@@ -23,6 +25,16 @@ export interface AccessIdentity {
 }
 
 const DEFAULT_PLACEHOLDER_DOMAIN = "internal-company.com";
+
+const UNAUTHENTICATED_MESSAGE =
+	"Setup required: Enable Cloudflare Access\n\nProtect this Worker behind Access so only company employees can sign in.";
+
+const jwksByTeamDomain = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+
+/** Clears cached JWKS clients. For unit tests only. */
+export function resetAccessAuthCacheForTests(): void {
+	jwksByTeamDomain.clear();
+}
 
 // ── Routing mode detection ───────────────────────────────────────────────────
 
@@ -50,7 +62,96 @@ export function isTestingMode(request: Request, env: Env): boolean {
 	);
 }
 
-// ── Public auth API ──────────────────────────────────────────────────────────
+// ── Token extraction and verification ────────────────────────────────────────
+
+function getCachedJwks(teamDomain: string) {
+	let jwks = jwksByTeamDomain.get(teamDomain);
+	if (!jwks) {
+		jwks = createRemoteJWKSet(new URL(`${teamDomain}/cdn-cgi/access/certs`));
+		jwksByTeamDomain.set(teamDomain, jwks);
+	}
+	return jwks;
+}
+
+function extractAccessToken(req: Request): string | null {
+	const headerToken = req.headers.get("cf-access-jwt-assertion");
+	if (headerToken) {
+		return headerToken;
+	}
+
+	const cookieHeader = req.headers.get("Cookie");
+	if (!cookieHeader) {
+		return null;
+	}
+
+	for (const part of cookieHeader.split(";")) {
+		const trimmed = part.trim();
+		const separator = trimmed.indexOf("=");
+		if (separator === -1) {
+			continue;
+		}
+
+		const name = trimmed.slice(0, separator);
+		if (name === "CF_Authorization") {
+			return decodeURIComponent(trimmed.slice(separator + 1));
+		}
+	}
+
+	return null;
+}
+
+function validateAccessEnv(env: Env): Response | null {
+	if (!env.TEAM_DOMAIN?.trim()) {
+		return new Response("Missing TEAM_DOMAIN configuration", {
+			status: 500,
+			headers: { "Content-Type": "text/plain" },
+		});
+	}
+
+	if (!env.POLICY_AUD?.trim()) {
+		return new Response("Missing POLICY_AUD configuration", {
+			status: 500,
+			headers: { "Content-Type": "text/plain" },
+		});
+	}
+
+	return null;
+}
+
+async function verifyAccessJwt(
+	token: string,
+	env: Env,
+): Promise<JWTPayload> {
+	const { payload } = await jwtVerify(token, getCachedJwks(env.TEAM_DOMAIN), {
+		issuer: env.TEAM_DOMAIN,
+		audience: env.POLICY_AUD,
+	});
+	return payload;
+}
+
+async function fetchAccessIdentity(
+	token: string,
+	env: Env,
+): Promise<CloudflareAccessIdentity | null> {
+	try {
+		const response = await fetch(
+			`${env.TEAM_DOMAIN}/cdn-cgi/access/get-identity`,
+			{
+				headers: { Cookie: `CF_Authorization=${token}` },
+			},
+		);
+
+		if (!response.ok) {
+			return null;
+		}
+
+		return (await response.json()) as CloudflareAccessIdentity;
+	} catch {
+		return null;
+	}
+}
+
+// ── Identity mapping ─────────────────────────────────────────────────────────
 
 function toAccessIdentity(
 	identity: CloudflareAccessIdentity | undefined,
@@ -60,6 +161,19 @@ function toAccessIdentity(
 		userId: identity?.user_uuid,
 	};
 }
+
+function identityFromJwtPayload(payload: JWTPayload): AccessIdentity {
+	if (typeof payload.email !== "string") {
+		throw new Error("Token is missing a valid email claim");
+	}
+
+	return {
+		email: payload.email,
+		userId: typeof payload.sub === "string" ? payload.sub : undefined,
+	};
+}
+
+// ── Public auth API ──────────────────────────────────────────────────────────
 
 /**
  * Extract the verified identity from the execution context.
@@ -82,60 +196,55 @@ export async function getAccessIdentity(
 }
 
 /**
- * Require a verified identity. Returns the identity or a 401 Response.
+ * Require a verified identity. Returns the identity or an error Response.
  *
- * ctx.access is defined when Cloudflare Access has authenticated the request.
- * If ctx.access is undefined, Access is not enabled on this Worker.
+ * Resolution order:
+ *   1. ctx.access.getIdentity() when the runtime provides Access context
+ *   2. Verify Cf-Access-Jwt-Assertion / CF_Authorization, then hydrate via
+ *      /cdn-cgi/access/get-identity (fallback to JWT claims on API failure)
  */
 export async function requireAccessIdentity(
-	ctx: ExecutionContext, req: Request, env: Env,
+	ctx: ExecutionContext,
+	req: Request,
+	env: Env,
 ): Promise<AccessIdentity | Response> {
-	const accessIdentity = await getAccessIdentity(ctx);
-	if (accessIdentity) {
-		return accessIdentity;
-	} else {
-		console.log("Missing Access Identity, falling back to token verification");
+	const contextIdentity = await getAccessIdentity(ctx);
+	if (contextIdentity) {
+		return contextIdentity;
 	}
 
-	const token = req.headers.get("cf-access-jwt-assertion");
+	const configError = validateAccessEnv(env);
+	if (configError) {
+		return configError;
+	}
 
-	// Check if token exists
+	const token = extractAccessToken(req);
 	if (!token) {
-		console.log("Missing required CF Access JWT");
-		return new Response("Missing required CF Access JWT", {
+		return new Response(UNAUTHENTICATED_MESSAGE, {
 			status: 401,
 			headers: { "Content-Type": "text/plain" },
 		});
-	} else {
-		console.log("CF Access JWT found");
+	}
+
+	let payload: JWTPayload;
+	try {
+		payload = await verifyAccessJwt(token, env);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Unknown error";
+		return new Response(`Invalid token: ${message}`, {
+			status: 403,
+			headers: { "Content-Type": "text/plain" },
+		});
+	}
+
+	const hydratedIdentity = await fetchAccessIdentity(token, env);
+	if (hydratedIdentity) {
+		return toAccessIdentity(hydratedIdentity);
 	}
 
 	try {
-		// Create JWKS from your team domain
-		const JWKS = createRemoteJWKSet(
-			new URL(`${env.TEAM_DOMAIN}/cdn-cgi/access/certs`)
-		);
-
-		// Verify the JWT
-		const { payload } = await jwtVerify(token, JWKS, {
-			issuer: env.TEAM_DOMAIN,
-			audience: env.POLICY_AUD,
-		});
-
-		// Token is valid, proceed with your application logic
-		if (typeof payload.email !== "string") {
-			throw new Error("Token is missing a valid email claim");
-		}
-
-		return {
-			email: payload.email,
-			userId:
-				typeof payload.user_uuid === "string"
-					? payload.user_uuid
-					: undefined,
-		};
+		return identityFromJwtPayload(payload);
 	} catch (error) {
-		// Token verification failed
 		const message = error instanceof Error ? error.message : "Unknown error";
 		return new Response(`Invalid token: ${message}`, {
 			status: 403,

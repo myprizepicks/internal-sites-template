@@ -19,7 +19,7 @@ Deploy an internal drag-and-drop static site platform for your company using [Wo
 
 1. **Workers for Platforms** - Each deployed site becomes an isolated Worker in a dispatch namespace. The platform routes requests to the correct site Worker
 2. **D1** - Stores site metadata (name, slug, owner, timestamps) and deployment history
-3. **Cloudflare Access** - Enforces company login. The platform reads authenticated user identity via `ctx.access` — no manual JWT verification or secrets required
+3. **Cloudflare Access** - Enforces company login. The platform reads identity via `ctx.access` in local dev, or by verifying the Access JWT and calling `/cdn-cgi/access/get-identity` in production (required for Workers with Static Assets)
 
 ## Bindings Used
 
@@ -67,7 +67,10 @@ Protect your Worker with Cloudflare Access so only company employees can access 
 6. Optionally review the session duration
 7. Select **Apply Access**
 
-Every request now requires company login. The platform Worker reads the authenticated user's identity via [`ctx.access`](https://developers.cloudflare.com/workers/configuration/cloudflare-access/) — no manual JWT verification or secrets required. Access handles authentication at the edge before your Worker runs.
+Every request now requires company login. The platform resolves the authenticated user's identity in one of two ways:
+
+- **Local dev** — `wrangler dev` simulates identity via `ctx.access` using the `access.dev` block in `wrangler.jsonc`
+- **Production** — Workers with Static Assets do not receive `ctx.access` ([documented limitation](https://developers.cloudflare.com/workers/configuration/cloudflare-access/)). The Worker verifies the `Cf-Access-Jwt-Assertion` header (or `CF_Authorization` cookie), then hydrates the full identity from [`/cdn-cgi/access/get-identity`](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/application-token/#user-identity). This requires `TEAM_DOMAIN` and `POLICY_AUD` in `wrangler.jsonc` (already set by the template).
 
 ### 5. Deploy your first site
 
@@ -245,6 +248,8 @@ npm run dev:remote
 Open [http://localhost:8787/deploy](http://localhost:8787/deploy) to use the platform.
 
 Local dev uses path-based routing automatically (`/sites/site-name/`). Cloudflare Access is simulated locally using the `access.dev` block in `wrangler.jsonc`, which provides a mock identity (`local-dev@localhost`) via `ctx.access`. To test as a different user, change the identity fields in the `access.dev` block.
+
+In deployed environments, identity is resolved from the Access JWT when `ctx.access` is unavailable (see step 4 above).
 
 ---
 
