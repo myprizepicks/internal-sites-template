@@ -18,9 +18,20 @@ const BaseURI = (env: Env) =>
 const ScriptsURI = (env: Env) =>
 	`${BaseURI(env)}/dispatch/namespaces/${env.DISPATCH_NAMESPACE_NAME}/scripts`;
 
-const AuthHeaders = (env: Env) => ({
-	Authorization: `Bearer ${env.DISPATCH_NAMESPACE_API_TOKEN}`,
-});
+function assertDispatchToken(env: Env): void {
+	if (!env.DISPATCH_NAMESPACE_API_TOKEN) {
+		console.error(
+			"DISPATCH_NAMESPACE_API_TOKEN is not configured; dispatch namespace API calls will fail",
+		);
+	}
+}
+
+const AuthHeaders = (env: Env) => {
+	assertDispatchToken(env);
+	return {
+		Authorization: `Bearer ${env.DISPATCH_NAMESPACE_API_TOKEN}`,
+	};
+};
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
