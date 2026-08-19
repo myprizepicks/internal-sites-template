@@ -45,7 +45,7 @@ export function BuildSitesTable(
 		})
 		.join("");
 
-	return `<div class="admin-table-wrap">
+	return `<div class="admin-table-wrap" role="region" aria-label="Sites table" tabindex="0">
 		<table class="admin-table">
 			<thead><tr>
 				<th>Site name</th>
@@ -79,7 +79,7 @@ export function BuildDeploymentsTable(
 		})
 		.join("");
 
-	return `<div class="admin-table-wrap">
+	return `<div class="admin-table-wrap" role="region" aria-label="Deployments table" tabindex="0">
 		<table class="admin-table">
 			<thead><tr>
 				<th>Site</th>
@@ -112,7 +112,7 @@ export function BuildTable(
 		)
 		.join("");
 
-	return `<div class="admin-table-wrap">
+	return `<div class="admin-table-wrap" role="region" aria-label="${escapeHtml(name)} table" tabindex="0">
 		<table class="admin-table">
 			<thead><tr>${head}</tr></thead>
 			<tbody>${body}</tbody>

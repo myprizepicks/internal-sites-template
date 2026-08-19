@@ -142,6 +142,15 @@ describe("Internal Sites Platform", () => {
 		expect(body).toContain("Upload and deploy");
 		expect(body).toContain("Deploy site");
 		expect(body).toContain("Drop a folder. Or a zip.");
+		expect(body).toContain('aria-label="PrizePicks Internal Sites"');
+		expect(body).toContain(
+			"/brand/logos/Pushin%20P%20-%20Secondary%20-%20On%20Dark.svg",
+		);
+		expect(body).toContain('font-family: "GT Standard"');
+		expect(body).toContain("@media (prefers-reduced-motion: reduce)");
+		expect(body).toContain("#8000FF");
+		expect(body).toContain("Maximum total size:");
+		expect(body).not.toContain("fonts.googleapis.com");
 	});
 
 	it("redirects / to /deploy", async () => {
@@ -161,6 +170,19 @@ describe("Internal Sites Platform", () => {
 		await waitOnExecutionContext(ctx);
 
 		expect(response.status).toBe(204);
+	});
+
+	it("serves the bundled PrizePicks mark from the management host", async () => {
+		const request = new Request(
+			"http://localhost/brand/logos/Pushin%20P%20-%20Secondary%20-%20On%20Dark.svg",
+		);
+		const ctx = createAccessContext();
+		const response = await app.fetch(request, env, ctx);
+		await waitOnExecutionContext(ctx);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get("content-type")).toContain("image/svg+xml");
+		expect(await response.text()).toContain('<svg width="225" height="220"');
 	});
 
 	// ── Unauthenticated: ctx.access is undefined ────────────────────────

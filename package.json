@@ -46,8 +46,8 @@
 		"build": "tsc",
 		"check": "npm run build && wrangler deploy --dry-run --env=\"\"",
 		"deploy": "npm run setup && wrangler deploy --env=\"\"",
-		"dev": "wrangler dev --env local --local",
-		"dev:remote": "wrangler dev --env=\"\"",
+		"dev": "wrangler dev --env local --local --host localhost",
+		"dev:remote": "wrangler dev --env=\"\" --host localhost",
 		"setup": "node scripts/setup.js",
 		"test": "node --test scripts/test-setup.js && vitest run"
 	}

@@ -2,11 +2,8 @@
  * Deploy page UI.
  *
  * Self-contained HTML, CSS, and JavaScript for the drag-and-drop deploy
- * experience. No build step, no framework -- just template literals.
- *
- * The visual design mirrors the Cloudflare Drop-style reference UI: an
- * orange oklch palette, Inter / Inter Tight typography,
- * a dotted "drop canvas", soft cards, and pill buttons.
+ * experience. No build step, no framework -- just template literals. Uses the
+ * PrizePicks visual system and accessible interaction states.
  */
 
 import { escapeHtml, jsonForScript } from "./html";
@@ -39,16 +36,16 @@ export function renderShell(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(title)}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>${CSS}</style>
 </head>
 <body>
   <div class="page-glow">
     <header class="site-header">
-      <a href="${escapeHtml(deployPath)}" class="brand">Internal Sites</a>
-      <nav class="nav">
+      <a href="${escapeHtml(deployPath)}" class="brand" aria-label="PrizePicks Internal Sites">
+        <img class="brand-mark" src="/brand/logos/Pushin%20P%20-%20Secondary%20-%20On%20Dark.svg" alt="" width="32" height="31">
+        <span>Internal Sites</span>
+      </a>
+      <nav class="nav" aria-label="Primary navigation">
         <a href="${escapeHtml(deployPath)}" class="nav-link">Deploy</a>
         <a href="/admin" class="nav-link">Admin</a>
       </nav>
@@ -154,35 +151,63 @@ export function renderNotFound(siteDomain: string, deployPath: string): string {
 // ── Styles ───────────────────────────────────────────────────────────────────
 
 const CSS = `
+@font-face {
+  font-family: "GT Standard";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/brand/fonts/GT-Standard-L-Standard-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "GT Standard";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/brand/fonts/GT-Standard-L-Standard-Semibold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "GT Standard";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/brand/fonts/GT-Standard-L-Standard-Bold.ttf") format("truetype");
+}
+
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   --radius: 0.625rem;
-  --background: oklch(0.985 0.006 60);
-  --foreground: oklch(0.17 0.005 60);
-  --canvas: oklch(0.68 0.213 39);
-  --canvas-foreground: oklch(0.99 0.005 60);
-  --brand: oklch(0.68 0.213 39);
-  --brand-strong: oklch(0.63 0.226 34);
-  --brand-foreground: oklch(0.99 0.005 60);
-  --success: oklch(0.48 0.117 158);
-  --success-foreground: oklch(0.99 0.005 60);
-  --success-surface: oklch(0.955 0.045 158);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.17 0.005 60);
-  --primary: oklch(0.68 0.213 39);
-  --muted: oklch(0.965 0.008 60);
-  --muted-foreground: oklch(0.52 0.014 55);
-  --accent: oklch(0.955 0.02 55);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-surface: oklch(0.971 0.03 20);
-  --border: oklch(0.9 0.01 60);
-  --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
-  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --background: #050614;
+  --foreground: #FBF9FF;
+  --canvas: #8000FF;
+  --canvas-foreground: #FBF9FF;
+  --brand: #8000FF;
+  --brand-strong: #5202A7;
+  --brand-foreground: #FBF9FF;
+  --success: #C8B9F9;
+  --success-surface: #0D0624;
+  --card: #0D0624;
+  --card-foreground: #FBF9FF;
+  --muted: #240550;
+  --muted-foreground: #C8B9F9;
+  --accent: #AD8BFB;
+  --destructive: #FF4A4A;
+  --destructive-surface: #0D0624;
+  --border: #985CFC;
+  --focus: #8000FF;
+  --font-display: "GT Standard", system-ui;
+  --font-sans: "GT Standard", system-ui;
   font-family: var(--font-sans);
 }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
 
 body {
   margin: 0;
@@ -200,7 +225,7 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
 .page-glow {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 40% at 50% -10%, var(--canvas-foreground) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% -10%, #240550 0%, transparent 70%),
     var(--background);
 }
 
@@ -213,7 +238,7 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
 .soft-card {
   border: 1px solid var(--border);
   background: var(--card);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px 0 rgb(5 6 20 / 0.05);
 }
 
 /* ── Page shell ────────────────────────────────────────── */
@@ -228,13 +253,23 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
 }
 
 .brand {
-  color: var(--brand);
+  align-items: center;
+  color: var(--foreground);
+  display: inline-flex;
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.125rem;
   font-weight: 700;
+  gap: 0.75rem;
   letter-spacing: -0.025em;
+  min-height: 2.75rem;
   text-decoration: none;
-  text-transform: uppercase;
+}
+
+.brand-mark {
+  display: block;
+  flex: 0 0 auto;
+  height: 2rem;
+  width: auto;
 }
 
 .nav {
@@ -246,9 +281,11 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
 }
 
 .nav-link {
+  display: inline-flex;
+  min-height: 2.75rem;
   border-radius: 9999px;
-  color: oklch(0.17 0.005 60 / 0.7);
-  padding: 0.5rem 1rem;
+  color: var(--foreground);
+  padding: 0.75rem 1rem;
   text-decoration: none;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
@@ -317,14 +354,13 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
 }
 
 input {
-  background: var(--card);
+  background: var(--background);
   border: 1px solid var(--border);
   border-radius: 1rem;
   color: var(--foreground);
   font: inherit;
   font-size: 1rem;
   margin-top: 0.5rem;
-  outline: none;
   padding: 1rem 1.25rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   width: 100%;
@@ -332,9 +368,9 @@ input {
 
 input::placeholder { color: var(--muted-foreground); }
 
-input:focus {
+input:focus-visible {
   border-color: var(--brand);
-  box-shadow: 0 0 0 4px oklch(0.68 0.213 39 / 0.15);
+  box-shadow: 0 0 0 4px rgb(128 0 255 / 0.18);
 }
 
 .url-row {
@@ -360,8 +396,8 @@ input:focus {
   background-color: var(--canvas);
   border-radius: 1.5rem;
   box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
-    0 20px 50px -12px rgba(246, 130, 31, 0.35);
+    inset 0 1px 0 0 rgb(251 249 255 / 0.18),
+    0 20px 50px -12px rgb(82 2 167 / 0.3);
   display: grid;
   margin-top: 2rem;
   padding: 6rem 1.5rem;
@@ -392,7 +428,7 @@ input:focus {
 }
 
 .drop-sub {
-  color: oklch(0.99 0.005 60 / 0.85);
+  color: #EDE7F8;
   margin: 1rem 0 0;
 }
 
@@ -405,18 +441,21 @@ input:focus {
 }
 
 .pill-button {
-  background: var(--card);
-  border: 0;
+  background: var(--background);
+  border: 1px solid var(--accent);
   border-radius: 9999px;
   color: var(--foreground);
   cursor: pointer;
   font: inherit;
   font-size: 1rem;
   font-weight: 700;
+  min-height: 2.75rem;
   padding: 0.75rem 1.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgb(5 6 20 / 0.12);
   transition: transform 0.15s ease;
 }
+
+.drop-canvas :focus-visible { outline-color: #FFD600; }
 
 .pill-button:hover { transform: translateY(-2px); }
 
@@ -446,13 +485,15 @@ input:focus {
 
 .remove-button {
   background: transparent;
-  border: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
   color: var(--muted-foreground);
   cursor: pointer;
   font: inherit;
   font-size: 0.875rem;
   font-weight: 600;
-  padding: 0;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
   transition: color 0.15s ease;
 }
 
@@ -474,13 +515,13 @@ input:focus {
   padding: 0.75rem 1.5rem;
 }
 
-.file-row + .file-row { border-top: 1px solid oklch(0.9 0.01 60 / 0.6); }
+.file-row + .file-row { border-top: 1px solid var(--muted); }
 
 .file-icon {
   color: var(--muted-foreground);
   flex: 0 0 auto;
-  height: 1rem;
-  width: 1rem;
+  height: 1.25rem;
+  width: 1.25rem;
 }
 
 .file-name {
@@ -501,8 +542,8 @@ input:focus {
 .file-check {
   color: var(--brand);
   flex: 0 0 auto;
-  height: 1rem;
-  width: 1rem;
+  height: 1.25rem;
+  width: 1.25rem;
 }
 
 /* ── Buttons ───────────────────────────────────────────── */
@@ -517,11 +558,14 @@ input:focus {
   font-size: 1rem;
   font-weight: 700;
   margin-top: 1.5rem;
+  min-height: 3rem;
   padding: 1rem;
-  box-shadow: 0 10px 15px -3px rgba(246, 130, 31, 0.25), 0 4px 6px -4px rgba(246, 130, 31, 0.2);
+  box-shadow: 0 10px 15px -3px rgb(82 2 167 / 0.28);
   transition: background-color 0.2s ease, opacity 0.2s ease;
   width: 100%;
 }
+
+.primary:focus-visible { outline-color: #FFD600; }
 
 .primary:hover:not(:disabled) { background: var(--brand-strong); }
 
@@ -532,12 +576,14 @@ input:focus {
 }
 
 .link-button {
-  background: var(--foreground);
+  background: var(--card);
+  border: 1px solid var(--accent);
   border-radius: 9999px;
-  color: var(--background);
-  display: inline-block;
+  color: var(--foreground);
+  display: inline-flex;
   font-weight: 700;
   margin-top: 1.5rem;
+  min-height: 2.75rem;
   padding: 0.75rem 1.5rem;
   text-decoration: none;
 }
@@ -554,12 +600,12 @@ input:focus {
 
 .result-card.success {
   background: var(--success-surface);
-  border: 1px solid oklch(0.48 0.117 158 / 0.25);
+  border: 1px solid var(--accent);
 }
 
 .result-card.error {
   background: var(--destructive-surface);
-  border: 1px solid oklch(0.577 0.245 27.325 / 0.25);
+  border: 2px solid var(--destructive);
 }
 
 .result-title {
@@ -568,7 +614,7 @@ input:focus {
 }
 
 .result-card.success .result-title { color: var(--success); }
-.result-card.error .result-title { color: var(--destructive); }
+.result-card.error .result-title { color: var(--foreground); }
 
 .result-url {
   color: var(--success);
@@ -580,7 +626,7 @@ input:focus {
 }
 
 .result-card.error p:not(.result-title) {
-  color: var(--destructive);
+  color: var(--foreground);
   margin: 0.5rem 0 0;
 }
 
@@ -614,7 +660,8 @@ input:focus {
 }
 
 .check-item.pass { color: var(--success); }
-.check-item.fail { color: var(--destructive); }
+.check-item.fail { color: var(--foreground); }
+.check-item.fail .check-icon { color: var(--destructive); }
 
 .result-actions {
   display: flex;
@@ -630,19 +677,20 @@ input:focus {
   font: inherit;
   font-size: 0.875rem;
   font-weight: 700;
+  min-height: 2.75rem;
   padding: 0.75rem 1.5rem;
   text-decoration: none;
 }
 
 .action-primary {
-  background: var(--foreground);
+  background: var(--brand);
   border: 0;
-  color: var(--background);
+  color: var(--brand-foreground);
 }
 
 .action-secondary {
   background: var(--card);
-  border: 1px solid oklch(0.48 0.117 158 / 0.3);
+  border: 1px solid var(--accent);
   color: var(--success);
 }
 
@@ -745,9 +793,11 @@ input:focus {
 }
 
 .admin-error {
-  color: var(--destructive);
+  border-left: 3px solid var(--destructive);
+  color: var(--foreground);
   font-size: 0.875rem;
   margin: 0;
+  padding-left: 0.75rem;
 }
 
 /* ── Responsive ────────────────────────────────────────── */
@@ -759,10 +809,20 @@ input:focus {
 }
 
 @media (max-width: 640px) {
+  .site-header { align-items: flex-start; }
+  .nav { flex-wrap: wrap; justify-content: flex-end; }
   .url-row { grid-template-columns: 1fr; }
   .url-row strong { white-space: normal; }
   .drop-canvas { padding: 4rem 1.5rem; }
 }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+  .drop-canvas.dragging, .pill-button:hover { transform: none; }
+}
+
 `;
 
 // ── Client-side deploy script ────────────────────────────────────────────────
@@ -970,7 +1030,7 @@ function computeViolations() {
   if (isZipSelection) {
     var zipSize = (selectedFiles.length === 1) ? selectedFiles[0].size : 0;
     checks.push({
-      label: "Total size under " + formatBytes(MAX_TOTAL_BYTES),
+      label: "Maximum total size: " + formatBytes(MAX_TOTAL_BYTES),
       detail: zipSize > MAX_TOTAL_BYTES ? "zip is " + formatBytes(zipSize) : null,
       pass: zipSize <= MAX_TOTAL_BYTES
     });
@@ -980,7 +1040,7 @@ function computeViolations() {
   // File count
   var count = selectedFiles.length;
   checks.push({
-    label: "Under " + MAX_FILES.toLocaleString() + " files",
+    label: "Maximum file count: " + MAX_FILES.toLocaleString(),
     detail: count > MAX_FILES ? count.toLocaleString() + " files selected" : null,
     pass: count <= MAX_FILES
   });
@@ -1012,14 +1072,14 @@ function computeViolations() {
 
   // Per-file size
   checks.push({
-    label: "Max " + formatBytes(MAX_FILE_BYTES) + " per file",
+    label: "Maximum file size: " + formatBytes(MAX_FILE_BYTES),
     detail: oversizedName ? oversizedName + " exceeds limit" : null,
     pass: !oversizedName
   });
 
   // Total size
   checks.push({
-    label: "Total size under " + formatBytes(MAX_TOTAL_BYTES),
+    label: "Maximum total size: " + formatBytes(MAX_TOTAL_BYTES),
     detail: totalBytes > MAX_TOTAL_BYTES ? formatBytes(totalBytes) + " selected" : null,
     pass: totalBytes <= MAX_TOTAL_BYTES
   });
@@ -1137,13 +1197,13 @@ function renderDisplayRow(row) {
 
 function rowIcon(type) {
   if (type === "folder") {
-    return '<svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>';
+    return '<svg class="file-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6a3 3 0 0 1 3-3h3l2 2h5a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3Z"/></svg>';
   }
-  return '<svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>';
+  return '<svg class="file-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 2h6l4 4v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Z"/><path d="M11 2v4h4"/></svg>';
 }
 
 function checkIcon() {
-  return '<svg class="file-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  return '<svg class="file-check" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 10 4 4 8-9"/></svg>';
 }
 
 // ── Directory traversal ──────────────────────────────────
